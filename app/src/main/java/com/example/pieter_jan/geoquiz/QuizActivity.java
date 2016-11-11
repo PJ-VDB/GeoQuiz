@@ -64,6 +64,14 @@ public class QuizActivity extends AppCompatActivity {
         // Attaching the question to the textview
         mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
 
+        // Users can also press the text field to go to the next question
+        mQuestionTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                updateQuestion();
+            }
+        });
 
         // Make the next button functional
 
