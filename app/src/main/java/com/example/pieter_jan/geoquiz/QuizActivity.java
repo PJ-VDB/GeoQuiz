@@ -124,6 +124,8 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void updateQuestion(){
+        // Create a stack trace to see where the method is called; for debugging purposes
+        // Log.d(TAG, "Updating questiono text for question #" + mCurrentIndex, new Exception());
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question); // setText method requires the resource id of the string
 
