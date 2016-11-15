@@ -1,6 +1,5 @@
 package com.example.pieter_jan.geoquiz;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -44,7 +43,11 @@ public class QuizActivity extends AppCompatActivity {
     // Notification if the user is cheating
     private static final int REQUEST_CODE_CHEAT = 0;
     // did the user cheat
-    private boolean mIsCheater;
+    //private boolean mIsCheater; // removed because it will be tied to the question number
+
+    // Array to keep track of what question was cheated on;
+    private boolean[] cheatArray = new boolean[mQuestionBank.length];
+    private final String[] KEY_ARRAY = new String[mQuestionBank.length]; // the key-value pairs used to save the instance
 
 
     @Override
@@ -54,6 +57,8 @@ public class QuizActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate (Bundle) called");
         setContentView(R.layout.activity_quiz);
 
+        // Create the keyarray to save the instance states to each question
+        createKeysInArray();
 
         //Get references to widgets
         mTrueButton = (Button) findViewById(R.id.true_button);
@@ -98,7 +103,7 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
-                mIsCheater = false;
+                cheatArray[mCurrentIndex] = false;
                 updateQuestion();
             }
         });
@@ -111,7 +116,7 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View v){
                 mCurrentIndex = (mCurrentIndex - 1) % mQuestionBank.length;
-                mIsCheater = false;
+                cheatArray[mCurrentIndex] = false;
                 updateQuestion();
             }
         });
@@ -131,7 +136,15 @@ public class QuizActivity extends AppCompatActivity {
 
         // Check if there is a previous instance (from screen rotation)
         if (savedInstanceState != null){
+            // Save the index of the current question; when the screen is rotated the question stays the same
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+            // the user can not clear mIsCheater by rotating the screen
+            //mIsCheater = savedInstanceState.getBoolean(KEY_CHEATER, false);
+
+            for(int i =0; i<KEY_ARRAY.length; i++){
+                cheatArray[i] = savedInstanceState.getBoolean(KEY_ARRAY[i],false);
+            }
+
         }
 
 
@@ -144,6 +157,13 @@ public class QuizActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         Log.i(TAG, "onSaveInstanceState");
         outState.putInt(KEY_INDEX, mCurrentIndex);
+//        outState.putBoolean(KEY_CHEATER, mIsCheater);
+
+        // save the values from cheatArray
+        for(int i=0; i<KEY_ARRAY.length; ++i){
+            outState.putBoolean(KEY_ARRAY[i], cheatArray[i]);
+        }
+
     }
 
     private void updateQuestion(){
@@ -154,18 +174,24 @@ public class QuizActivity extends AppCompatActivity {
 
     }
 
+
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(resultCode != Activity.RESULT_OK){
+//        if(resultCode != Activity.RESULT_OK){
+//            return;
+//        }
+//
+//        if(requestCode == REQUEST_CODE_CHEAT){
+//            if(data == null){
+//                return;
+//            }
+////            mIsCheater = CheatActivity.wasAnswerShown(data);
+
+        if (data == null) {
             return;
         }
-
-        if(requestCode == REQUEST_CODE_CHEAT){
-            if(data == null){
-                return;
-            }
-            mIsCheater = CheatActivity.wasAnswerShown(data);
-        }
+            cheatArray[mCurrentIndex] = data.getBooleanExtra(CheatActivity.EXTRA_ANSWER_SHOWN, false); // made the key public, not sure if it's allowed
     }
 
     @Override
@@ -200,12 +226,13 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void checkAnswer(boolean userPressedTrue){
+        // Check if the answer is true or not
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
 
         // Initialize response
         int messageResId = 0;
 
-        if (mIsCheater){
+        if (cheatArray[mCurrentIndex]){
             messageResId = R.string.judgment_toast;
         } else {
             if (userPressedTrue == answerIsTrue) {
@@ -217,6 +244,16 @@ public class QuizActivity extends AppCompatActivity {
 
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
 
+    }
+
+    /**
+     * Popule the KEY_ARRAY in order to save instance states (to check if someone cheated before)
+     * the keys will look like: question_0; question_1; ...
+     */
+    private void createKeysInArray(){
+        for(int i=0; i<KEY_ARRAY.length; ++i){
+            KEY_ARRAY[i] = "question_"+i;
+        }
     }
 
 
